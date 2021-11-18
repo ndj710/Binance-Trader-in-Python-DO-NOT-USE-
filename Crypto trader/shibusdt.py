@@ -8,6 +8,7 @@ import asyncio
 import ta
 import math
 
+
 coin = 'SHIBUSDT'
 stream = websockets.connect("wss://stream.binance.com:9443/stream?streams=shibusdt@miniTicker")
 
