@@ -116,17 +116,17 @@ class Binance_trade():
                 print(self.df)
             if len(self.df) >= 2000:
                 buy_cond = []
-                for i in range(-1,-30,-1):
-                    if i >= -30:
-                        mask = ta.momentum.roc(self.df.Price, 15).iloc[i] >= 0
+                for i in range(-1,-120,-1):
+                    if i >= -80:
+                        mask = ta.momentum.roc(self.df.Price, 120).iloc[i] >= 0
                     else:
-                        mask = ta.momentum.roc(self.df.Price, 15).iloc[i] < 0
+                        mask = ta.momentum.roc(self.df.Price, 120).iloc[i] < 0
                     buy_cond.append(mask)
                 if self.open_position == False:
                     print('{} | BUYING {} | Current price {:.10f}'.format(n, self.coin, self.df.iloc[-1].Price))
                     print("Current condition {:.5f}".format(sum(buy_cond) / len(buy_cond)))
                     print("Need positive {:.10f}\nNeed negative {:.10f}".format(ta.trend.macd_diff(self.df.Price).iloc[-60], ta.trend.macd_diff(self.df.Price).iloc[-120]))
-                    if sum(buy_cond) / len(buy_cond) >= 0.95 and ta.trend.macd_diff(self.df.Price).iloc[-60] > 0 and ta.trend.macd_diff(self.df.Price).iloc[-120] < 0:
+                    if sum(buy_cond) / len(buy_cond) >= 0.9 and ta.trend.macd_diff(self.df.Price).iloc[-60] > 0 and ta.trend.macd_diff(self.df.Price).iloc[-120] < 0:
                         try:
                             buying_order = await self.buy_order(self.df.iloc[-1].Price)
                             self.open_position = True
@@ -137,7 +137,7 @@ class Binance_trade():
                     if len(subdf) != 0:
                         if self.waiting == False:
                             subdf['highest'] = subdf.Price.cummax()
-                            subdf['trailingstop'] = subdf['highest'] * 0.99
+                            subdf['trailingstop'] = subdf['highest'] * 0.999
                         if self.waiting == True:            
                             # check if rising
                             print("Rising, looking for exit")
@@ -145,7 +145,6 @@ class Binance_trade():
                             subdf['trailingstop'] = subdf['highest'] * 0.997
                             if subdf.iloc[-1].Price <= subdf.iloc[-1].trailingstop:
                                 selling_order = await self.sell_order()
-                                current_usdt = self.get_usdt()
                                 self.write_to_log(selling_order, buying_order)
                                 self.open_position = False     
                                 self.waiting = False
@@ -158,11 +157,9 @@ class Binance_trade():
                             time.sleep(5)
                         if self.df.iloc[-1].Price >= float(buying_order['fills'][0]['price']) * 1.0024:
                             self.waiting = True
-                    print('\n{} | SELLING {} |'.format(n, self.coin))
-                    print("Buy price {:.10f}\nCurrent Price {:.10f}\nSell at {:.10f} or above for profit\nCurrent stoploss {:.10f}\n///////////////////////////////".format(\
-                            float(buying_order['fills'][0]['price']),subdf.iloc[-1].Price, float(buying_order['fills'][0]['price'])*1.0024, subdf.iloc[-1].trailingstop))                              
-
-
+                        print('\n{} | SELLING {} |'.format(n, self.coin))
+                        print("Buy price {:.10f}\nCurrent Price {:.10f}\nSell at {:.10f} or above for profit\nCurrent stoploss {:.10f}\n///////////////////////////////".format(float(buying_order['fills'][0]['price']),subdf.iloc[-1].Price, float(buying_order['fills'][0]['price'])*1.0024, subdf.iloc[-1].trailingstop))                              
+  
 
 my_trader = Binance_trade(coin, client)
 loop = asyncio.get_event_loop()
