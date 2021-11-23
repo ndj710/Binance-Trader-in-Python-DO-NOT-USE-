@@ -137,7 +137,7 @@ class Binance_trade():
                     if len(subdf) != 0:
                         if self.waiting == False:
                             subdf['highest'] = subdf.Price.cummax()
-                            subdf['trailingstop'] = subdf['highest'] * 0.999
+                            subdf['trailingstop'] = subdf['highest'] * 0.995
                         if self.waiting == True:            
                             # check if rising
                             print("Rising, looking for exit")
