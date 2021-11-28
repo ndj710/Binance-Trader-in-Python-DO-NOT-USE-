@@ -1,3 +1,4 @@
+# Gets price of a coinpair and stores it in a database table
 from binance import Client
 import websockets
 import json
@@ -5,7 +6,7 @@ import pandas as pd
 import asyncio
 import sqlalchemy
 import time
-engine = sqlalchemy.create_engine('sqlite:///COINUSDTstream.db')
+engine = sqlalchemy.create_engine('sqlite:///Database/COINUSDTstream.db')
 
 # Key info
 keys = open('keys.txt', 'r')
@@ -33,8 +34,9 @@ def create_frame(data):
     df = pd.DataFrame([data])
     df = df.loc[:, ['s', 'E', 'c']]
     df.columns = ['symbol', 'Time', 'Price']
+    df = df.set_index('Time')
+    df.index = pd.to_datetime(df.index, unit='ms')
     df.Price = df.Price.astype(float)
-    df.Time = pd.to_datetime(df.Time, unit='ms')
     return df
         
 
@@ -49,7 +51,7 @@ async def coin_info(coin):
                     data = json.loads(data)['data']
                     frame = create_frame(data)
                     print(frame)
-                    frame.to_sql(coin, engine, if_exists='append', index=False)
+                    frame.to_sql(coin, engine, if_exists='append', index=True)
                     df = pd.read_sql(coin, engine)
         except:
             stream = None

@@ -1,4 +1,4 @@
-# This script was used for learning and will very likely lose money if used!
+# This script was used for learning and will lose money if used!
 # DO NOT USE
 import websockets
 import json

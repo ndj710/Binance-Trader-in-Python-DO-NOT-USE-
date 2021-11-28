@@ -15,8 +15,8 @@ api_key = keys.readline().strip()
 secret_key = keys.readline().strip()
 
 # Get coin pair and check coin info
-trade_db = sqlalchemy.create_engine('sqlite:///TRADECOINstream.db')
-coin_db = sqlalchemy.create_engine('sqlite:///COINUSDTstream.db')
+trade_db = sqlalchemy.create_engine('sqlite:///Database/TRADECOINstream.db')
+coin_db = sqlalchemy.create_engine('sqlite:///Database/COINUSDTstream.db')
 client = Client(api_key, secret_key)
 exchange_info = client.get_exchange_info()
 valid_coin = False
@@ -110,17 +110,16 @@ class Binance_trade():
             time.sleep(1)
             n += 1
             self.df = pd.read_sql(self.coinpair, coin_db)
-            self.df = self.df[-2000:]
-            if len(self.df) < 2000:
-                print("filling up dataframe {}/900".format(len(self.df)))
-                print(self.df)
-            if len(self.df) >= 2000:
+            self.df = self.df[-1000:]
+            if len(self.df) < 900:
+                print("filling up dataframe {}/400".format(len(self.df)))
+            if len(self.df) >= 900:
                 buy_cond = []
-                for i in range(-1,-120,-1):
-                    if i >= -80:
-                        mask = ta.momentum.roc(self.df.Price, 120).iloc[i] >= 0
+                for i in range(-1,-300,-10):
+                    if i >= -300:
+                        mask = ta.momentum.roc(self.df.Price, 300).iloc[i] >= 0
                     else:
-                        mask = ta.momentum.roc(self.df.Price, 120).iloc[i] < 0
+                        mask = ta.momentum.roc(self.df.Price, 300).iloc[i] < 0
                     buy_cond.append(mask)
                 if self.open_position == False:
                     print('{} | BUYING {} | Current price {:.10f}'.format(n, self.coin, self.df.iloc[-1].Price))
@@ -131,13 +130,13 @@ class Binance_trade():
                             buying_order = await self.buy_order(self.df.iloc[-1].Price)
                             self.open_position = True
                         except:
-                            time.sleep(5)
+                            time.sleep(2)
                 if self.open_position == True:
                     subdf = self.df[self.df.Time >= pd.to_datetime(buying_order['transactTime'], unit = 'ms')]
                     if len(subdf) != 0:
                         if self.waiting == False:
                             subdf['highest'] = subdf.Price.cummax()
-                            subdf['trailingstop'] = subdf['highest'] * 0.995
+                            subdf['trailingstop'] = subdf['highest'] * 0.99
                         if self.waiting == True:            
                             # check if rising
                             print("Rising, looking for exit")
@@ -148,13 +147,13 @@ class Binance_trade():
                                 self.write_to_log(selling_order, buying_order)
                                 self.open_position = False     
                                 self.waiting = False
-                                time.sleep(5)
+                                time.sleep(900)
                             
                         elif subdf.iloc[-1].Price <= subdf.iloc[-1].trailingstop:
                             selling_order = await self.sell_order()
                             self.write_to_log(selling_order, buying_order)
                             self.open_position = False
-                            time.sleep(5)
+                            time.sleep(1800)
                         if self.df.iloc[-1].Price >= float(buying_order['fills'][0]['price']) * 1.0024:
                             self.waiting = True
                         print('\n{} | SELLING {} |'.format(n, self.coin))
